@@ -21,15 +21,16 @@ jobs:
           mkdir -p fr
           mkdir -p txt
 
-      - name: Install tools
+      - name: Install Streamlink
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install yt-dlp
+          python3 -m pip install streamlink
+          python3 -m streamlink --version
 
       - name: Generate TF1 Stream
         run: |
-          curl_output=$(curl -k -s -H "User-Agent: Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.103 Mobile Safari/537.36" https://callofliberty.fr/tv/1-TF1/1-TF1.php | grep -oP "source:\s*'\K[^']+(?=',)")
-          curl_output2=$(curl -k -e "https://callofliberty.fr/" -A "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.103 Mobile Safari/537.36" -H "Origin: https://callofliberty.fr" "$curl_output")
+          curl_output=$(curl -k -s -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" https://callofliberty.fr/tv/1-TF1/1-TF1.php | grep -oP "source:\s*'\K[^']+(?=',)")
+          curl_output2=$(curl -k -e "https://callofliberty.fr/" -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" -H "Origin: https://callofliberty.fr" "$curl_output")
 
           echo "$curl_output2" > fr/videotf1.m3u8
 
@@ -63,14 +64,33 @@ jobs:
         run: |
           UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
-          m3u8_url=$(timeout 60 streamlink \
+          echo "Available CNEWS streams:"
+          timeout 60 python3 -m streamlink \
             --http-header "User-Agent=$UA" \
             --http-header "Referer=https://www.dailymotion.com/" \
             --http-header "Accept=*/*" \
-            "https://www.dailymotion.com/video/x3b68jn" best --stream-url)
+            "https://www.dailymotion.com/video/x3b68jn" > txt/cnews_streams.txt 2>&1 || true
+
+          cat txt/cnews_streams.txt
+
+          stream_name=$(grep -oE '[0-9]{3,4}p([0-9]{2})?' txt/cnews_streams.txt | sort -V | tail -n 1)
+
+          if [ -z "$stream_name" ]; then
+            echo "No explicit resolution found, falling back to best"
+            stream_name="best"
+          fi
+
+          echo "Chosen stream: $stream_name"
+
+          m3u8_url=$(timeout 60 python3 -m streamlink \
+            --http-header "User-Agent=$UA" \
+            --http-header "Referer=https://www.dailymotion.com/" \
+            --http-header "Accept=*/*" \
+            --stream-url \
+            "https://www.dailymotion.com/video/x3b68jn" "$stream_name")
 
           if [ -z "$m3u8_url" ]; then
-            echo "No stream URL found"
+            echo "No stream URL found with Streamlink"
             exit 1
           fi
 
@@ -80,6 +100,7 @@ jobs:
             echo "$m3u8_url"
           } > fr/videocnews.m3u
 
+          echo "Final CNEWS file:"
           cat fr/videocnews.m3u
 
       - name: Commit and push generated files
@@ -89,7 +110,7 @@ jobs:
 
           git add fr/videotf1.m3u
           git add fr/videocnews.m3u
-          git add txt/cnews_formats.txt
+          git add txt/cnews_streams.txt || true
 
           git commit -m "Update TF1 and CNEWS streams" || echo "No changes"
           git push
