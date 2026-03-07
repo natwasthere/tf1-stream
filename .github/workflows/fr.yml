@@ -59,27 +59,27 @@ jobs:
 
           mv -f fr/videotf1.m3u8 fr/videotf1.m3u
 
-      - name: Generate CNEWS Stream with yt-dlp
+      - name: Generate CNEWS Stream
         run: |
-          yt-dlp -F "https://www.dailymotion.com/video/x3b68jn" > txt/cnews_formats.txt
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
-          echo "Available CNEWS formats:"
-          cat txt/cnews_formats.txt
+          m3u8_url=$(timeout 60 streamlink \
+            --http-header "User-Agent=$UA" \
+            --http-header "Referer=https://www.dailymotion.com/" \
+            --http-header "Accept=*/*" \
+            "https://www.dailymotion.com/video/x3b68jn" best --stream-url)
 
-          best_url=$(yt-dlp -g -f "best[protocol=m3u8]/best" "https://www.dailymotion.com/video/x3b68jn" | head -n 1)
-
-          if [ -z "$best_url" ]; then
-            echo "No stream URL found with yt-dlp"
+          if [ -z "$m3u8_url" ]; then
+            echo "No stream URL found"
             exit 1
           fi
 
           {
             echo "#EXTM3U"
             echo "#EXTINF:-1,CNEWS"
-            echo "$best_url"
+            echo "$m3u8_url"
           } > fr/videocnews.m3u
 
-          echo "Final CNEWS file:"
           cat fr/videocnews.m3u
 
       - name: Commit and push generated files
