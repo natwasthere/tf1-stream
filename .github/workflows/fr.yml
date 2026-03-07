@@ -64,18 +64,46 @@ jobs:
 
       - name: Generate CNEWS Stream
         run: |
-          m3u8_url=$(streamlink --stream-url "https://www.dailymotion.com/video/x3b68jn" best)
+          m3u8_url=$(timeout 60 streamlink --stream-url "https://www.dailymotion.com/video/x3b68jn" best)
 
           if [ -z "$m3u8_url" ]; then
             echo "No stream URL found with Streamlink"
             exit 1
           fi
 
+          curl -L -s \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" \
+            "$m3u8_url" > fr/videocnews.m3u8
+
+          best_url=$(awk '
+            /^#EXT-X-STREAM-INF:/ {
+              bw = 0
+              if (match($0, /BANDWIDTH=[0-9]+/)) {
+                bw = substr($0, RSTART + 10, RLENGTH - 10) + 0
+              }
+              if (getline url > 0) {
+                if (bw > max_bw) {
+                  max_bw = bw
+                  best_url = url
+                }
+              }
+            }
+            END {
+              print best_url
+            }
+          ' fr/videocnews.m3u8)
+
+          if [ -z "$best_url" ]; then
+            best_url="$m3u8_url"
+          fi
+
           {
             echo "#EXTM3U"
             echo "#EXTINF:-1,CNEWS"
-            echo "$m3u8_url"
-          } > fr/videocnews.m3u
+            echo "$best_url"
+          } > fr/videocnews.m3u8
+
+          mv -f fr/videocnews.m3u8 fr/videocnews.m3u
 
           echo "Final CNEWS file:"
           cat fr/videocnews.m3u
