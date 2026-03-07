@@ -21,20 +21,10 @@ jobs:
           mkdir -p fr
           mkdir -p txt
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Playwright
+      - name: Install Streamlink
         run: |
-          npm init -y
-          npm install playwright
-          npx playwright install --with-deps chromium
-
-################################
-# TF1
-################################
+          python3 -m pip install --upgrade pip
+          python3 -m pip install streamlink
 
       - name: Generate TF1 Stream
         run: |
@@ -56,7 +46,9 @@ jobs:
                 }
               }
             }
-            END { print best_url }
+            END {
+              print best_url
+            }
           ' fr/videotf1.m3u8)
 
           {
@@ -67,108 +59,26 @@ jobs:
 
           mv -f fr/videotf1.m3u8 fr/videotf1.m3u
 
-################################
-# CNEWS via Playwright network capture
-################################
+          echo "Final TF1 file:"
+          cat fr/videotf1.m3u
 
-      - name: Create Playwright extractor for CNEWS
+      - name: Generate CNEWS Stream
         run: |
-          cat > txt/extract_cnews.js <<'EOF'
-          const { chromium } = require('playwright');
-          const fs = require('fs');
+          m3u8_url=$(streamlink --stream-url "https://www.dailymotion.com/video/x3b68jn" best)
 
-          (async () => {
-            const browser = await chromium.launch({ headless: true });
-            const context = await browser.newContext({
-              userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'
-            });
-            const page = await context.newPage();
-
-            let found = null;
-            const seen = [];
-
-            page.on('request', request => {
-              const url = request.url();
-              if (url.includes('.m3u8')) {
-                seen.push(url);
-                if (!found) found = url;
-              }
-            });
-
-            page.on('response', response => {
-              const url = response.url();
-              if (url.includes('.m3u8')) {
-                seen.push(url);
-                if (!found) found = url;
-              }
-            });
-
-            try {
-              await page.goto('https://www.dailymotion.com/video/x3b68jn', {
-                waitUntil: 'networkidle',
-                timeout: 90000
-              });
-
-              await page.waitForTimeout(15000);
-
-              fs.writeFileSync('txt/cnews_requests.txt', seen.join('\n'));
-
-              if (!found) {
-                console.log('No m3u8 found in network requests');
-                process.exit(1);
-              }
-
-              fs.writeFileSync('txt/cnews_m3u8_url.txt', found + '\n');
-              console.log(found);
-            } finally {
-              await browser.close();
-            }
-          })();
-          EOF
-
-      - name: Capture CNEWS m3u8 from network
-        run: |
-          node txt/extract_cnews.js
-
-      - name: Download and reduce CNEWS playlist to best quality
-        run: |
-          m3u8_url=$(cat txt/cnews_m3u8_url.txt)
-
-          curl -L -s \
-            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" \
-            "$m3u8_url" > fr/videocnews.m3u8
-
-          best_url=$(awk '
-            /^#EXT-X-STREAM-INF:/ {
-              bw = 0
-              if (match($0, /BANDWIDTH=[0-9]+/)) {
-                bw = substr($0, RSTART + 10, RLENGTH - 10) + 0
-              }
-              if (getline url > 0) {
-                if (bw > max_bw) {
-                  max_bw = bw
-                  best_url = url
-                }
-              }
-            }
-            END { print best_url }
-          ' fr/videocnews.m3u8)
-
-          if [ -z "$best_url" ]; then
-            best_url="$m3u8_url"
+          if [ -z "$m3u8_url" ]; then
+            echo "No stream URL found with Streamlink"
+            exit 1
           fi
 
           {
             echo "#EXTM3U"
             echo "#EXTINF:-1,CNEWS"
-            echo "$best_url"
-          } > fr/videocnews.m3u8
+            echo "$m3u8_url"
+          } > fr/videocnews.m3u
 
-          mv -f fr/videocnews.m3u8 fr/videocnews.m3u
-
-################################
-# Commit
-################################
+          echo "Final CNEWS file:"
+          cat fr/videocnews.m3u
 
       - name: Commit and push generated files
         run: |
@@ -177,7 +87,6 @@ jobs:
 
           git add fr/videotf1.m3u
           git add fr/videocnews.m3u
-          git add txt/cnews_requests.txt txt/cnews_m3u8_url.txt txt/extract_cnews.js
 
           git commit -m "Update TF1 and CNEWS streams" || echo "No changes"
           git push
