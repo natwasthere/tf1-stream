@@ -24,20 +24,21 @@ jobs:
           curl_output=$(curl -k -s -H "User-Agent: Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.103 Mobile Safari/537.36" https://callofliberty.fr/tv/1-TF1/1-TF1.php | grep -oP "source:\s*'\K[^']+(?=',)")
           curl_output2=$(curl -k -e "https://callofliberty.fr/" -A "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.103 Mobile Safari/537.36" -H "Origin: https://callofliberty.fr" "$curl_output")
 
-          # Save original playlist as .m3u8 first
+          # Save original master playlist first
           echo "$curl_output2" > fr/videotf1.m3u8
 
-          # Keep only the highest BANDWIDTH stream
+          # Extract the URL of the highest BANDWIDTH variant
           best_url=$(awk '
             /^#EXT-X-STREAM-INF:/ {
               bw = 0
               if (match($0, /BANDWIDTH=[0-9]+/)) {
-                bw = substr($0, RSTART + 10, RLENGTH - 10)
+                bw = substr($0, RSTART + 10, RLENGTH - 10) + 0
               }
-              getline url
-              if (bw > max_bw) {
-                max_bw = bw
-                best_url = url
+              if (getline url > 0) {
+                if (bw > max_bw) {
+                  max_bw = bw
+                  best_url = url
+                }
               }
             }
             END {
@@ -45,7 +46,7 @@ jobs:
             }
           ' fr/videotf1.m3u8)
 
-          # Replace file content with a simple M3U pointing to the best quality stream
+          # Replace file content with only the best stream
           {
             echo "#EXTM3U"
             echo "#EXTINF:-1,TF1"
@@ -53,7 +54,10 @@ jobs:
           } > fr/videotf1.m3u8
 
           # Rename to .m3u
-          mv fr/videotf1.m3u8 fr/videotf1.m3u
+          mv -f fr/videotf1.m3u8 fr/videotf1.m3u
+
+          echo "Final file content:"
+          cat fr/videotf1.m3u
 
       - name: Commit and push generated file
         run: |
