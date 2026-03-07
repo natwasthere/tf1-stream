@@ -66,6 +66,23 @@ jobs:
             -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" \
             "https://www.dailymotion.com/video/x3b68jn")
 
+          echo "===== PAGE LENGTH ====="
+          printf '%s' "$page" | wc -c
+
+          echo "===== FIRST 2000 CHARS ====="
+          printf '%s' "$page" | head -c 2000
+          echo
+
+          echo "===== TRY COMMON PATTERNS ====="
+          printf '%s' "$page" | grep -oiE 'https://[^"[:space:]]+' | head -n 50 || true
+          printf '%s' "$page" | grep -oiE '[^"[:space:]]+m3u8[^"[:space:]]*' | head -n 20 || true
+          printf '%s' "$page" | grep -oiE '[^"[:space:]]+master[^"[:space:]]*' | head -n 20 || true
+          printf '%s' "$page" | grep -oiE '[^"[:space:]]+manifest[^"[:space:]]*' | head -n 20 || true
+          printf '%s' "$page" | grep -oiE '[^"[:space:]]+playlist[^"[:space:]]*' | head -n 20 || true
+
+          echo "===== SAVE DEBUG PAGE ====="
+          printf '%s' "$page" > txt/cnews_debug_page.html
+
           m3u8_url=$(printf '%s' "$page" | grep -oE 'https://[^"[:space:]]+\.m3u8([^"[:space:]]*)?' | head -n 1)
 
           if [ -z "$m3u8_url" ]; then
