@@ -1,0 +1,10 @@
+[dailymotion] Extracting URL: https://www.dailymotion.com/video/x3b68jn
+[dailymotion] Downloading Access Token
+[dailymotion] x3b68jn: Downloading media JSON metadata
+[dailymotion] x3b68jn: Downloading metadata JSON
+[dailymotion] x3b68jn: Downloading m3u8 information with randomized headers
+[info] Available formats for x3b68jn:
+ID    EXT RESOLUTION FPS |  TBR PROTO | VCODEC      ACODEC
+-------------------------------------------------------------
+hls-0 mp4 320x180     25 | 475k m3u8  | avc1.42000c mp4a.40.5
+hls-1 mp4 512x288     25 | 782k m3u8  | avc1.420015 mp4a.40.5
