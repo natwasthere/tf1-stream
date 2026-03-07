@@ -1,0 +1,2 @@
+[cli][info] Found matching plugin dailymotion for URL https://www.dailymotion.com/video/x3b68jn
+Available streams: 180p (worst), 288p (best)
