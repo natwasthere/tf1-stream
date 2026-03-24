@@ -1,5 +1,9 @@
 #EXTM3U
-#EXTINF:-1 group-title="NHL",03/24/26 07:00:00 PM EST = Seattle Kraken @ Florida Panthers
+#EXTINF:-1 group-title="MLB",03/24/26 01:10:00 PM EST = Boston Red Sox @ Minnesota Twins
+https://github.com/mikekaprielian/rtnaodhor93n398/raw/main/en/offline.mp4
+#EXTINF:-1 group-title="MLB",03/24/26 02:10:00 PM EST = Kansas City Royals @ Texas Rangers
+https://github.com/mikekaprielian/rtnaodhor93n398/raw/main/en/offline.mp4
+#EXTINF:-1 group-title="MLB",03/24/26 08:00:00 PM EST = Los Angeles Angels @ Los Angeles Dodgers
 https://github.com/mikekaprielian/rtnaodhor93n398/raw/main/en/offline.mp4
 #EXTINF:-1 group-title="NHL",03/24/26 07:00:00 PM EST = Toronto Maple Leafs @ Boston Bruins
 https://github.com/mikekaprielian/rtnaodhor93n398/raw/main/en/offline.mp4
@@ -12,6 +16,8 @@ https://github.com/mikekaprielian/rtnaodhor93n398/raw/main/en/offline.mp4
 #EXTINF:-1 group-title="NHL",03/24/26 07:00:00 PM EST = Columbus Blue Jackets @ Philadelphia Flyers
 https://github.com/mikekaprielian/rtnaodhor93n398/raw/main/en/offline.mp4
 #EXTINF:-1 group-title="NHL",03/24/26 07:00:00 PM EST = Ottawa Senators @ Detroit Red Wings
+https://github.com/mikekaprielian/rtnaodhor93n398/raw/main/en/offline.mp4
+#EXTINF:-1 group-title="NHL",03/24/26 07:00:00 PM EST = Seattle Kraken @ Florida Panthers
 https://github.com/mikekaprielian/rtnaodhor93n398/raw/main/en/offline.mp4
 #EXTINF:-1 group-title="NHL",03/24/26 07:30:00 PM EST = Minnesota Wild @ Tampa Bay Lightning
 https://github.com/mikekaprielian/rtnaodhor93n398/raw/main/en/offline.mp4
